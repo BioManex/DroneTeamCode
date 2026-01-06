@@ -4,6 +4,15 @@ from flask_socketio import SocketIO
 # This module lets us pick random numbers, you can remove it later.
 import random
 
+from picamera2 import Picamera2
+import io
+import base64
+
+picam2 = Picamera2()
+camera_config = picam2.create_preview_configuration(main={"size": (640, 480)})
+picam2.configure(camera_config)
+picam2.start()
+
 # Here, we create the neccesary base app. You don't need to worry about this.
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -36,6 +45,16 @@ def background_thread():
 def handle_connect():
     print('Client connected')
     socketio.start_background_task(target=background_thread)
+    
+    
+@socketio.on('request_image')
+def handle_image_request():
+    stream = io.BytesIO()
+    picam2.capture_file(stream, format='jpeg')
+    stream.seek(0)
+    b64_image = base64.b64encode(stream.read()).decode('utf-8')
+    seketio.emit('new_image', {'image_data': b64_image})
+    print("Sent new Image to client.")
 
 # This function is called
 def main():
