@@ -29,7 +29,7 @@ def background_thread():
         socketio.sleep(1)
         # Then, we emit an event called "update_data" - but this can actually be whatever we want - with the data being a dictionary
         # where 'randomNumber' is set to a random number we choose here. You should replace the data being sent back with your sensor data
-        # that you fetch from things connected to your Pi.
+        # that you fet	ch from things connected to your Pi.
         socketio.emit(
             'update_data',
             {
@@ -53,7 +53,7 @@ def handle_image_request():
     picam2.capture_file(stream, format='jpeg')
     stream.seek(0)
     b64_image = base64.b64encode(stream.read()).decode('utf-8')
-    seketio.emit('new_image', {'image_data': b64_image})
+    socketio.emit('new_image', {'image_data': b64_image})
     print("Sent new Image to client.")
 
 # This function is called
@@ -63,3 +63,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
