@@ -4,6 +4,8 @@ from flask_socketio import SocketIO
 # This module lets us pick random numbers, you can remove it later.
 import random
 
+from bmp180 import BMP180
+
 from picamera2 import Picamera2
 import io
 import base64
@@ -17,6 +19,7 @@ picam2.start()
 app = Flask(__name__)
 socketio = SocketIO(app)
 
+bmp = BMP180()
 # When someone requests the root page from our web server, we return 'index.html'.
 @app.route('/')
 def index():
@@ -27,6 +30,7 @@ def background_thread():
     while True:
         # We sleep here for a single second, but this can be increased or decreased depending on how quickly you want data to be pushed to clients.
         socketio.sleep(1)
+        barometricPressure = bmp.get_pressure()
         # Then, we emit an event called "update_data" - but this can actually be whatever we want - with the data being a dictionary
         # where 'randomNumber' is set to a random number we choose here. You should replace the data being sent back with your sensor data
         # that you fet	ch from things connected to your Pi.
@@ -34,6 +38,7 @@ def background_thread():
             'update_data',
             {
                 'randomNumber': random.randint(1, 100),
+                'barometricPressure': barometricPressure
                 # you can add more here! for instance, something along the lines of:
                 # 'mySensor': mysensor.get_sensor_data(),
             }
@@ -45,8 +50,18 @@ def background_thread():
 def handle_connect():
     print('Client connected')
     socketio.start_background_task(target=background_thread)
-    
-    
+
+socket.on('update_data', function(msg) {
+    var randomNumberSpan = document.getElementById('randomNumber');
+    randomNumberSpan.textContent = nsg.randomNumber;
+    var barometricPressureSpan = document.getElementById('barometricPressure');
+    barometricPressureSpan.textContent = msg.barometricPressure;
+});
+
+@socketio.on('do_a_thing')
+def do_a_thing(msg):
+    print(msg['hello'])
+
 @socketio.on('request_image')
 def handle_image_request():
     stream = io.BytesIO()
