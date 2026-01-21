@@ -8,10 +8,14 @@ from picamera2 import Picamera2
 import io
 import base64
 
+from bmp180 import BMP180
+
 picam2 = Picamera2()
 camera_config = picam2.create_preview_configuration(main={"size": (640, 480)})
 picam2.configure(camera_config)
 picam2.start()
+
+#bmp = BMP180()
 
 # Here, we create the neccesary base app. You don't need to worry about this.
 app = Flask(__name__)
@@ -27,13 +31,17 @@ def background_thread():
     while True:
         # We sleep here for a single second, but this can be increased or decreased depending on how quickly you want data to be pushed to clients.
         socketio.sleep(1)
+        #barometricPressure = bmp.get_pressure()
+
         # Then, we emit an event called "update_data" - but this can actually be whatever we want - with the data being a dictionary
         # where 'randomNumber' is set to a random number we choose here. You should replace the data being sent back with your sensor data
-        # that you fet	ch from things connected to your Pi.
+        # that you fetch from things connected to your Pi.
         socketio.emit(
             'update_data',
             {
                 'randomNumber': random.randint(1, 100),
+                #'barometricPressure': barometricPressure
+
                 # you can add more here! for instance, something along the lines of:
                 # 'mySensor': mysensor.get_sensor_data(),
             }
@@ -45,7 +53,6 @@ def background_thread():
 def handle_connect():
     print('Client connected')
     socketio.start_background_task(target=background_thread)
-    
     
 @socketio.on('request_image')
 def handle_image_request():

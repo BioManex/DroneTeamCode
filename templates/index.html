@@ -10,19 +10,29 @@
     <h1>Aerospace Jam Example</h1>
     <!-- Notice how the span that contains the placeholder value has an ID. We reference this ID later in the script, and it lets us pick this element in specific. -->
     <p><b>Random number chosen by the Pi: </b> <span id="randomNumber">Loading...</span></p>
+    <p><b>Barometric pressure: </b> <span id=""barometricPressure">Loading...</span>hPa</p>
     
     <h2>Camera</h2>
     <button id="takePictureButton">Take Picture</button> 
     <br>
     <img id="cameraImage" src="" alt="Live from Pi!" style="width: 640px; height: 480px; border: 1px solid black;">
+    <button id=""doAThingButton">Click me to have babies!</button>
     
     <script>
         document.addEventListener('DOMContentLoaded', function(){
+            var doAThingButton = document.getElementById('doAThingButton');
+            doAThingButton.addEventListener('click', function() {
+                socket.emit('do_a_thing', { hello: 'Hello, Aerospace Jam! This is a message being sent from the client to the server.' });
+            })
+            
             var socket = io.connect('http://' + document.domain + ':' + location.port);
             socket.on('update_data', function(msg){
                 var randomNumberSpan = document.getElementById('randomNumber');
                 randomNumberSpan.textContent = msg.randomNumber;
+                var barometricPressureSpan = document.getElementById('randomNumber');
+                randomNumberSpan.textContent = msg.randomNumber
             });    
+
             var takePictureButton = document.getElementById('takePictureButton');
             var cameraImage = document.getElementById('cameraImage');
                
