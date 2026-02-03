@@ -10,12 +10,18 @@ from picamera2 import Picamera2
 import io
 import base64
 
+from tfluna import TFLuna
+
 from bmp180 import BMP180
 
 picam2 = Picamera2()
 camera_config = picam2.create_preview_configuration(main={"size": (640, 480)})
 picam2.configure(camera_config)
 picam2.start()
+
+tfluna = TFLuna()
+tfluna.open()
+tfluna.set_samp_rate(5)
 
 #bmp = BMP180()
 
@@ -35,6 +41,10 @@ def background_thread():
         # We sleep here for a single second, but this can be increased or decreased depending on how quickly you want data to be pushed to clients.
         socketio.sleep(1)
         barometricPressure = bmp.get_pressure()
+        distance, strength, temperature = tfluna.read()
+        print(f"Distance: {round(distance * 100.0, 2)} cm")
+        print(f"Strength: {strength}")
+        print(f"Temperature: {temperature} C")
         # Then, we emit an event called "update_data" - but this can actually be whatever we want - with the data being a dictionary
         # where 'randomNumber' is set to a random number we choose here. You should replace the data being sent back with your sensor data
         # that you fetch from things connected to your Pi.
@@ -42,7 +52,10 @@ def background_thread():
             'update_data',
             {
                 'randomNumber': random.randint(1, 100),
-                'barometricPressure': barometricPressure
+                'barometricPressure': barometricPressure,
+                'distance': round(distance * 100.0, 2),
+                'strength': strength,
+                'temperature': temperature
                 # you can add more here! for instance, something along the lines of:
                 # 'mySensor': mysensor.get_sensor_data(),
             }

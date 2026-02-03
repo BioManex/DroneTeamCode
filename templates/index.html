@@ -10,7 +10,8 @@
     <h1>Aerospace Jam Example</h1>
     <!-- Notice how the span that contains the placeholder value has an ID. We reference this ID later in the script, and it lets us pick this element in specific. -->
     <p><b>Random number chosen by the Pi: </b> <span id="randomNumber">Loading...</span></p>
-    <p><b>Barometric pressure: </b> <span id=""barometricPressure>Loading...</span>hPa</p>
+    <p><b>Barometric pressure: </b> <span id="barometricPressure">Loading...</span>hPa</p>
+    <p><b>Distance: </b><span id="distance"> Loading...</span>cm</p>
     
     <h2>Camera</h2>
     <button id="takePictureButton">Take Picture</button> 
@@ -29,8 +30,11 @@
             socket.on('update_data', function(msg){
                 var randomNumberSpan = document.getElementById('randomNumber');
                 randomNumberSpan.textContent = msg.randomNumber;
-                var barometricPressureSpan = document.getElementById('randomNumber');
-                randomNumberSpan.textContent = msg.randomNumber
+                var barometricPressureSpan = document.getElementById('barometricPressure');
+                barometricPressureSpan.textContent = msg.barometricPressure
+                var distanceSpan = document.getElementById('distance');
+                distanceSpan.textContent = msg.distance
+
             });    
 
             var takePictureButton = document.getElementById('takePictureButton');
