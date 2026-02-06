@@ -9,6 +9,13 @@ from bmp180 import BMP180
 from picamera2 import Picamera2
 import io
 import base64
+import RPi.GPIO as GPIO
+
+IN1 = 12
+IN2 = 13
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(IN1, GPIO.OUT)
+GPIO.setup(IN2, GPIO.OUT)
 
 picam2 = Picamera2()
 camera_config = picam2.create_preview_configuration(main={"size": (640, 480)})
@@ -78,3 +85,15 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+def motor_forward():
+    GPIO.output(IN1, GPIO.HIGH)
+    GPIO.output(IN2, GPIO.LOW)
+
+def motor_backward():
+    GPIO.output(IN1, GPIO.LOW)
+    GPIO.output(IN2, GPIO.HIGH)
+
+def motor_stop():
+    GPIO.output(IN1, GPIO.LOW)
+    GPIO.output(IN2, GPIO.LOW)
