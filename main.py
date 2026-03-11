@@ -28,7 +28,7 @@ def index():
 def background_thread():
     while True:
         # We sleep here for a single second, but this can be increased or decreased depending on how quickly you want data to be pushed to clients.
-        socketio.sleep(0.02)
+        socketio.sleep(0.05)
         stream = io.BytesIO()
         picam2.capture_file(stream, format='jpeg')
         stream.seek(0)
