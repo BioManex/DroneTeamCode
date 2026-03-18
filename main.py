@@ -8,10 +8,14 @@ from picamera2 import Picamera2
 import io
 import base64
 
+from mpu6050 import mpu6050
+
 picam2 = Picamera2()
 camera_config = picam2.create_preview_configuration(main={"size": (640, 480)})
 picam2.configure(camera_config)
 picam2.start()
+
+mpu = mpu6050(0x68)
 
 # Here, we create the neccesary base app. You don't need to worry about this.
 app = Flask(__name__)
@@ -42,7 +46,14 @@ def background_thread():
 
             }
         )
-
+        accel_data = mpu.get_accel_data()
+        print(accel_data['x'])
+        print(accel_data['y'])
+        print(accel_data['z'])
+        gyro_data = mpu.get_gyro_data()
+        print(gyro_data['x'])
+        print(gyro_data['y'])
+        print(gyro_data['z'])
 
 
 # This function runs when someone connects to the server - and all we do is start the background thread to update the data.
