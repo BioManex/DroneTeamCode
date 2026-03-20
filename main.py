@@ -31,6 +31,14 @@ def background_thread():
     while True:
         # We sleep here for a single second, but this can be increased or decreased depending on how quickly you want data to be pushed to clients.
         socketio.sleep(0.05)
+        accel_data = mpu.get_accel_data()
+        print(accel_data['x'])
+        print(accel_data['y'])
+        print(accel_data['z'])
+        gyro_data = mpu.get_gyro_data()
+        print(gyro_data['x'])
+        print(gyro_data['y'])
+        print(gyro_data['z'])
         stream = io.BytesIO()
         picam2.capture_file(stream, format='jpeg')
         stream.seek(0)
@@ -46,14 +54,7 @@ def background_thread():
 
             }
         )
-        accel_data = mpu.get_accel_data()
-        print(accel_data['x'])
-        print(accel_data['y'])
-        print(accel_data['z'])
-        gyro_data = mpu.get_gyro_data()
-        print(gyro_data['x'])
-        print(gyro_data['y'])
-        print(gyro_data['z'])
+        
 
 
 # This function runs when someone connects to the server - and all we do is start the background thread to update the data.
@@ -75,6 +76,7 @@ def handle_image_request():
 def main():
     # These specific arguments are required to make sure the webserver is hosted in a consistent spot, so don't change them unless you know what you're doing.
     socketio.run(app, host='0.0.0.0', port=80, allow_unsafe_werkzeug=True)
+    
 
 if __name__ == '__main__':
     main()
