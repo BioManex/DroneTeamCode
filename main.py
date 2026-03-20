@@ -10,12 +10,18 @@ import base64
 
 from mpu6050 import mpu6050
 
+from tfluna import TFLuna
+
 picam2 = Picamera2()
 camera_config = picam2.create_preview_configuration(main={"size": (640, 480)})
 picam2.configure(camera_config)
 picam2.start()
 
 mpu = mpu6050(0x68)
+
+tfluna = TFLuna() 
+tfluna.open() 
+tfluna.set_samp_rate(5)
 
 # Here, we create the neccesary base app. You don't need to worry about this.
 app = Flask(__name__)
@@ -39,6 +45,11 @@ def background_thread():
         print(gyro_data['x'])
         print(gyro_data['y'])
         print(gyro_data['z'])
+        distance, strength, temperature = tfluna.read() # This uses special syntax called a "tuple" to set all three variables at once from the same function.
+        # Now, we can simply access them:
+        print(f"Distance: {round(distance * 100.0, 2)} cm")
+        print(f"Strength: {strength}")
+        print(f"Temperature: {temperature} C")
         stream = io.BytesIO()
         picam2.capture_file(stream, format='jpeg')
         stream.seek(0)
