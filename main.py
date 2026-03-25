@@ -1,6 +1,8 @@
 # These two modules allow us to run a web server.
 from flask import Flask, render_template
 from flask_socketio import SocketIO
+
+from time import sleep
 # This module lets us pick random numbers.
 import random
 # Add this line to import the BMP180 library:
@@ -17,7 +19,6 @@ from bmp180 import BMP180
 from mpu6050 import mpu6050
 
 import RPi.GPIO as GPIO
-from time import sleep
 
 picam2 = Picamera2()
 camera_config = picam2.create_preview_configuration(main={"size": (640, 480)})
@@ -96,35 +97,36 @@ def handle_image_request():
     socketio.emit('new_image', {'image_data': b64_image})
     print("Sent new Image to client.")
 
-
-# First, we define our two output pins that the motor controller is connected to.
-
-
-# Set the GPIO numbering mode so that it knows how we're referring to the pins
-GPIO.setmode(GPIO.BCM)
-
-# Set up the GPIO pins as output
-GPIO.setup(IN1, GPIO.OUT)
-GPIO.setup(IN2, GPIO.OUT)
-
 # Now, we define three functions to help us set the motor's state. These should be pretty self-explanatory.
+@socketio.on('motor_forward')
 def motor_forward():
     """Turns the motor forward"""
     GPIO.output(IN1, GPIO.HIGH)
     GPIO.output(IN2, GPIO.LOW)
 
+@socketio.on('motor_backward')
 def motor_backward():
     """Turns the motor backward"""
     GPIO.output(IN1, GPIO.LOW)
     GPIO.output(IN2, GPIO.HIGH)
 
+@socketio.on('motor_stop')
 def motor_stop():
     """Stops the motor"""
     GPIO.output(IN1, GPIO.LOW)
     GPIO.output(IN2, GPIO.LOW)
 
+
+# This function is called
+def main():
+    # These specific arguments are required to make sure the webserver is hosted in a consistent spot, so don't change them unless you know what you're doing.
+    socketio.run(app, host='0.0.0.0', port=80, allow_unsafe_werkzeug=True)
+
+if __name__ == '__main__':
+    main()
+    
+
 # Now, to make the motor do things, for example:
-from time import sleep
 print("Moving forward...")
 motor_forward()
 sleep(3)
@@ -138,81 +140,5 @@ motor_stop()
 sleep(3)
 # Easy peasy!
 
-
-
-# Set the GPIO numbering mode
-GPIO.setmode(GPIO.BCM)
-
-# Set up the GPIO pins as output
-GPIO.setup(IN1, GPIO.OUT)
-GPIO.setup(IN2, GPIO.OUT)
-GPIO.setup(ENA, GPIO.OUT)
-
-# Create a PWM instance for the ENA pin
-# The second argument is the frequency in Hertz. 100Hz is a good starting point.
-pwm = GPIO.PWM(ENA, 100)
-
-# Start PWM with a duty cycle of 0 (motor is off)
-pwm.start(0)
-
-def motor_forward(speed):
-    """Turns the motor forward at a given speed (0-100)"""
-    GPIO.output(IN1, GPIO.HIGH)
-    GPIO.output(IN2, GPIO.LOW)
-    pwm.ChangeDutyCycle(speed)
-
-def motor_backward(speed):
-    """Turns the motor backward at a given speed (0-100)"""
-    GPIO.output(IN1, GPIO.LOW)
-    GPIO.output(IN2, GPIO.HIGH)
-    pwm.ChangeDutyCycle(speed)
-
-def motor_stop():
-    """Stops the motor"""
-    GPIO.output(IN1, GPIO.LOW)
-    GPIO.output(IN2, GPIO.LOW)
-    pwm.ChangeDutyCycle(0)
-
-# Example usage:
-print("Moving forward at 50% speed...")
-motor_forward(50)
-sleep(3)
-
-print("Moving backward at 100% speed...")
-motor_backward(100)
-sleep(3)
-
-print("Moving forward at 25% speed...")
-motor_forward(25)
-sleep(3)
-
-print("Stopping...")
-motor_stop()
-sleep(3)
-
-# Don't forget to clean up the GPIO pins and stop PWM
-pwm.stop()
 GPIO.cleanup()
-
-def get_current_angle():
-    tick30=0
-    timer=0
-    delta_time=0
-    current_angle=0
-    while 1:
-        FPS(tick30)
-        
-def FPS(lastTick30):
-    tick30=timer*30
-    delta_time=tick30-lastTick30
-
-
-# This function is called
-def main():
-    # These specific arguments are required to make sure the webserver is hosted in a consistent spot, so don't change them unless you know what you're doing.
-    socketio.run(app, host='0.0.0.0', port=80, allow_unsafe_werkzeug=True)
-
-if __name__ == '__main__':
-    main()
-    
 
