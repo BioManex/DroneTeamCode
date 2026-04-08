@@ -53,6 +53,7 @@ def index():
 app = Flask(__name__)
 socketio = SocketIO(app)
 
+ground_pressure = bmp.get_pressure()
 
 # This function runs in the background to transmit data to connected clients.
 def background_thread():
@@ -62,6 +63,7 @@ def background_thread():
         
         #Pressure test
         barometricPressure = bmp.get_pressure()
+        height = bmp.get_altitude(sea_level_pressure=ground_pressure)
 
         #Accelerometer test
         accel_data = mpu.get_accel_data()
@@ -83,7 +85,8 @@ def background_thread():
             'update_data',
             {
                 'randomNumber': random.randint(1, 100),
-                'barometricPressure': barometricPressure
+                'barometricPressure': barometricPressure,
+                'height': height
                 
                 # you can add more here! for instance, something along the lines of:
                 # 'mySensor': mysensor.get_sensor_data(),
