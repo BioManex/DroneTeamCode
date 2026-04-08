@@ -133,8 +133,24 @@
                 randomNumberSpan.textContent = msg.randomNumber;
                 var barometricPressureSpan = document.getElementById('barometricPressure');
                 barometricPressureSpan.textContent = msg.barometricPressure;
-                var distanceSpan = document.getElementById('dist');
-                distanceSpan.textContent = msg.distance;
+                var dist = document.getElementById('dist');
+                dist.textContent = msg.distance;
+                var temp = document.getElementById('temp');
+                temp.textContent = msg.temp;
+                var strength = document.getElementById('strenght')
+                strength.textContent = msg.strength;
+                var aclX = document.getElementById('aclX');
+                aclX.textContent = msg.aclX;
+                var aclY = document.getElementById('aclY');
+                aclY.textContent = msg.aclY;
+                var aclZ = document.getElementById('aclZ');
+                aclZ.textContent = msg.aclZ;
+                var gyrX = document.getElementById('gyrX');
+                gyrX.textContent = msg.gyrX;
+                var gyrY = document.getElementById('gyrY');
+                gyrY.textContent = msg.gyrY;
+                var gyrZ = document.getElementById('gyrZ');
+                gyrZ.textContent = msg.gyrZ;
 
                 updateChart(msg.barometricPressure);
                 
