@@ -133,6 +133,11 @@ def motor_stop():
     GPIO.output(IN1, GPIO.LOW)
     GPIO.output(IN2, GPIO.LOW)
 
+@socketio.on('ping')
+def pong():
+    socketio.emit('pong')
+
+
 
 # This function is called
 def main():
@@ -141,21 +146,7 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
 
-# Now, to make the motor do things, for example:
-print("Moving forward...")
-motor_forward()
-sleep(3)
 
-print("Moving backward...")
-motor_backward()
-sleep(3)
 
-print("Stopping...")
-motor_stop()
-sleep(3)
-# Easy peasy!
-
-GPIO.cleanup()
 

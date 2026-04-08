@@ -25,7 +25,7 @@
     <p><b>Barometric pressure: </b> <span id="barometricPressure">Loading...</span>hPa</p>
     <p><b>Distance: </b><span id="distance"> Loading...</span>cm</p> -->
     
-    <button id="takePictureButton" style="position:absolute; left: 50px; top: 620px;">Take Picture</button> 
+    <button id="takePictureButton" style="position:absolute; left: 100px; top: 620px;">Take Picture</button> 
     <div style="height: 300px; width: 300px; border: 1px solid black; position:absolute; left: 100px; top: 300px;"><canvas id="gyro"></canvas></div>
     <img id="cameraImage" src="" alt="Live from Pi!" style="width: 500px; height: 350px; border: 1px solid black; position:absolute; left: 450px; top: 200px;">
     <div style="height: 225px; width: 500px; border: 1px solid black; position:absolute; right: 50px; top: 5px;"><canvas id="elevation"></canvas></div>
@@ -77,12 +77,19 @@
         </tr>
     </table>
     <div style="height: 250px; width: 250px; border: 1px solid black; position:absolute; left: 100px; top: 30px;"><canvas id="Lidar"></canvas></div>
-    <p style="font-size: 50px; position:absolute; left: 400px; top: 75px;"> <span>00:00</span></p>
+    <p style="font-size: 50px; position:absolute; left: 450px; top: 75px;"> <span id="flightTime">00:00</span></p>
+    <button id="resetTimer" style="width: 100px; height: 40px; position: absolute; top: 135px; left: 700px;">Reset Flight Timer</button>
     <button id="MotorUp" style="width: 400px; height: 50px; position: absolute; bottom: 80px; left: 550px;">Motor Up</button>
     <button id="MotorDown" style="width: 400px; height: 50px; position: absolute; bottom: 25px; left: 550px;">Motor Down</button>
     <button id="MotorStop" style="width: 95px; height: 105px; position: absolute; bottom: 25px; left: 450px;">Motor Stop</button>
+    <p style="position: absolute; top: 20px; left: 450px;">Ping: <span id="ping">Loading...</span></p>
     <script>
-    const elevationChart = document.getElementById("elevation");
+        
+        const elevationChart = document.getElementById("elevation");
+        var barometricPressureSpan = document.getElementById('barometricPressure');
+        var elevationPos = 0;
+        var pingStart = 0;
+        var pingStop = 0;
 
         var data = {
                 labels: [],
@@ -95,8 +102,29 @@
 
         var elevation = new Chart(elevationChart, {
             type: 'line',
-            data: data
+            data: data,
+            options: {
+                scales: {
+                    y: {
+                        max: 10,
+                        min: 0
+                    }
+                },
+                animation: false
+            }
         });
+
+        function updateChart(x){
+            data.labels.push(elevationPos);
+            data.datasets[0].data.push(x);
+            elevationPos++;
+            elevation.update();
+            if(data.labels.length > 50){
+                data.labels.splice(0,1);
+                data.datasets[0].data.splice(0,1);
+            }
+            
+        }
 
         document.addEventListener('DOMContentLoaded', function(){
             var socket = io.connect('http://' + document.domain + ':' + location.port);
@@ -104,17 +132,21 @@
                 var randomNumberSpan = document.getElementById('randomNumber');
                 randomNumberSpan.textContent = msg.randomNumber;
                 var barometricPressureSpan = document.getElementById('barometricPressure');
-                barometricPressureSpan.textContent = msg.barometricPressure
+                barometricPressureSpan.textContent = msg.barometricPressure;
                 var distanceSpan = document.getElementById('dist');
-                distanceSpan.textContent = msg.distance
+                distanceSpan.textContent = msg.distance;
 
-                data.labels.push(data.labels.length + 1);
-                data.datasets[0].data.push(msg.height);
+                updateChart(msg.barometricPressure);
+                
 
             });    
 
             var takePictureButton = document.getElementById('takePictureButton');
             var cameraImage = document.getElementById('cameraImage');
+            var motorDownButton = document.getElementById('motorDown');
+            var motorUpButton = document.getElementById('motorUp');
+            var motorStopButton = document.getElementById('motorStop');
+            var pingTime = document.getElementById('ping');
             
             doAThingButton.addEventListener('click', function() {
                 socket.emit('do_a_thing', { hello: 'Hello, Aerospace Jam! This is a message being sent from the client to the server.' });
@@ -124,12 +156,37 @@
                 console.log('Requesting image from server...');
                 socket.emit('request_image');
             });
+
+            motorDownButton.addEventListener('click', function() {
+                socket.emit('motor_forward');
+            });
+
+            motorUpButton.addEventListener('click', function() {
+                socket.emit('motor_backward');
+            });
+
+            motorStopButton.addEventListener('click', function() {
+                socket.emit('motor_stop');
+            });
                
             socket.on('new_image', function(msg) {
                 console.log('Received new image');
                 cameraImage.src = 'data:image/jpeg;base64,' + msg.image_data;
             });
+
+            socket.on('pong', function(){
+                pingStop = performance.now();
+                pingTime.textContent = pingStop - pingStart + " ms";
+            })
         });
+
+        function ping(){
+            pingStart = performance.now();
+            socket.emit('ping');
+        }
+
+        setInterval(ping, 500);
+        
     </script>
     </body>
     </html>
