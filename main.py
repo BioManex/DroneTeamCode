@@ -86,10 +86,17 @@ def background_thread():
             {
                 'randomNumber': random.randint(1, 100),
                 'barometricPressure': barometricPressure,
-                'height': height
+                'height': height,
+                'dist': round(distance * 100.0, 2),
+                'strength': strength,
+                'temp': temperature,
+                'aclX': accel_data['x'],
+                'aclY': accel_data['y'],
+                'aclZ': accel_data['z'],
+                'gyrX': gyro_data['x'],
+                'gyrY': gyro_data['y'],
+                'gyrZ': gyro_data['z'],
                 
-                # you can add more here! for instance, something along the lines of:
-                # 'mySensor': mysensor.get_sensor_data(),
             }
         )
         
