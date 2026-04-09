@@ -5,6 +5,7 @@
     <title>Aerospace jam control station</title>
     <!-- The below script tag is used to load socket.io from the server. -->
     <script src="{{ url_for('static', filename='js/socket.io.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/package/dist/chart.umd.js') }}"></script>
     <script src="../static/js/package/dist/chart.umd.js"></script>
 </head>
 <style>
@@ -26,7 +27,7 @@
     <p><b>Distance: </b><span id="distance"> Loading...</span>cm</p> -->
     
     <button id="takePictureButton" style="position:absolute; left: 100px; top: 620px;">Take Picture</button> 
-    <div style="height: 300px; width: 300px; border: 1px solid black; position:absolute; left: 100px; top: 300px;"><canvas id="gyro"></canvas></div>
+    <div style="height: 300px; width: 300px; border: 1px solid black; position:absolute; left: 100px; top: 300px;"><canvas id="Lidar"></canvas></div>
     <img id="cameraImage" src="" alt="Live from Pi!" style="width: 500px; height: 350px; border: 1px solid black; position:absolute; left: 450px; top: 200px;">
     <div style="height: 225px; width: 500px; border: 1px solid black; position:absolute; right: 50px; top: 5px;"><canvas id="elevation"></canvas></div>
     <!-- <canvas id="rawData" style="height: 400px; width: 250px; border: 1px solid black; position:absolute; right: 250px; top: 250px;" ></canvas> -->
@@ -76,7 +77,7 @@
             <td id="gyrZ">Loading...</td>
         </tr>
     </table>
-    <div style="height: 250px; width: 250px; border: 1px solid black; position:absolute; left: 100px; top: 30px;"><canvas id="Lidar"></canvas></div>
+    <div style="height: 250px; width: 250px; border: 1px solid black; position:absolute; left: 100px; top: 30px;"><canvas id="breadcrumb"></canvas></div>
     <p style="font-size: 50px; position:absolute; left: 450px; top: 75px;"> <span id="flightTime">0:00</span></p>
     <button id="resetTimer" style="width: 100px; height: 40px; position: absolute; top: 135px; left: 700px;">Reset Flight Timer</button>
     <button id="MotorUp" style="width: 400px; height: 50px; position: absolute; bottom: 80px; left: 550px;">Motor Up</button>
@@ -86,6 +87,7 @@
     <script>
         
         const elevationChart = document.getElementById("elevation");
+        const breadcrumbChart = document.getElementById('breadcrumb');
         var barometricPressureSpan = document.getElementById('barometricPressure');
         var elevationPos = 0;
         var pingStart = 0;
@@ -93,13 +95,33 @@
         var time = 0;
 
         var data = {
-                labels: [],
-                datasets: [{
-                    label: 'Elevation',
-                    data: [],
-                    tension: 0.1,
-                }]
-            };
+            labels: [],
+            datasets: [{
+                label: 'Elevation',
+                data: [],
+                tension: 0.1,
+            }]
+        };
+
+        var breadData = {
+            datasets: [{
+                label: 'Scatter Dataset',
+                data: [{
+                    x: -10,
+                    y: 0
+                }, {
+                    x: 0,
+                    y: 10
+                }, {
+                    x: 10,
+                    y: 5
+                }, {
+                    x: 0.5,
+                    y: 5.5
+                }],
+                backgroundColor: 'rgb(255, 99, 132)'
+            }],
+        }
 
         var elevation = new Chart(elevationChart, {
             type: 'line',
@@ -112,6 +134,33 @@
                     }
                 },
                 animation: false
+            }
+        });
+
+        var breadcrumb = new Chart(breadcrumbChart, {
+            type: 'scatter',
+            data: breadData,
+            options: {
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'center',
+                        min: -20,
+                        max: 20
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'center',
+                        min: -20,
+                        max: 20
+                    }
+                },
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
             }
         });
 
