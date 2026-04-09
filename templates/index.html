@@ -30,7 +30,6 @@
     <div style="height: 300px; width: 300px; border: 1px solid black; position:absolute; left: 100px; top: 300px;"><canvas id="Lidar"></canvas></div>
     <img id="cameraImage" src="" alt="Live from Pi!" style="width: 500px; height: 350px; border: 1px solid black; position:absolute; left: 450px; top: 200px;">
     <div style="height: 225px; width: 500px; border: 1px solid black; position:absolute; right: 50px; top: 5px;"><canvas id="elevation"></canvas></div>
-    <!-- <canvas id="rawData" style="height: 400px; width: 250px; border: 1px solid black; position:absolute; right: 250px; top: 250px;" ></canvas> -->
     <table id="rawData" style="width: 32.55%;position:absolute; right: 50px; top: 250px;">
         <tr>
             <th>Raw Data</th>
@@ -83,10 +82,11 @@
     <button id="MotorUp" style="width: 400px; height: 50px; position: absolute; bottom: 80px; left: 550px;">Motor Up</button>
     <button id="MotorDown" style="width: 400px; height: 50px; position: absolute; bottom: 25px; left: 550px;">Motor Down</button>
     <button id="MotorStop" style="width: 95px; height: 105px; position: absolute; bottom: 25px; left: 450px;">Motor Stop</button>
+    <button id="ClearBreadcrumb" style="width: 120px; height: 40px; position: absolute; left: 190px; top: 620px;">Reset Breadcrumb Trail</button>
     <p style="position: absolute; top: 20px; left: 450px;">Ping: <span id="ping">Loading...</span></p>
     <script>
         
-        const elevationChart = document.getElementById("elevation");
+        const elevationChart = document.getElementById('elevation');
         const breadcrumbChart = document.getElementById('breadcrumb');
         var barometricPressureSpan = document.getElementById('barometricPressure');
         var elevationPos = 0;
@@ -105,23 +105,22 @@
 
         var breadData = {
             datasets: [{
-                label: 'Scatter Dataset',
+                label: 'Positions',
                 data: [{
-                    x: -10,
-                    y: 0
-                }, {
                     x: 0,
-                    y: 10
-                }, {
-                    x: 10,
-                    y: 5
-                }, {
-                    x: 0.5,
-                    y: 5.5
+                    y: 0
+                },
+                {
+                    x: 3,
+                    y: -2
+                },
+                {
+                   x: 2,
+                   y: 10 
                 }],
                 backgroundColor: 'rgb(255, 99, 132)'
             }],
-        }
+        };
 
         var elevation = new Chart(elevationChart, {
             type: 'line',
@@ -160,7 +159,8 @@
                     legend: {
                         display: false
                     }
-                }
+                },
+                animation: false
             }
         });
 
@@ -173,7 +173,16 @@
                 data.labels.splice(0,1);
                 data.datasets[0].data.splice(0,1);
             }
-            
+        }
+
+        function updateBreadcrumbChart(xpos, ypos){
+            breadData.datasets[0].data.push({x: xpos, y: ypos});
+            breadcrumb.update();
+        }
+
+        function ClearBreadcrumbChart(){
+            breadData.datasets[0].data = [];
+            breadcrumb.update();
         }
 
         document.addEventListener('DOMContentLoaded', function(){
@@ -181,34 +190,43 @@
             socket.on('update_data', function(msg){
                 var randomNumberSpan = document.getElementById('randomNumber');
                 randomNumberSpan.textContent = msg.randomNumber;
+
                 var barometricPressureSpan = document.getElementById('barometricPressure');
                 barometricPressureSpan.textContent = msg.barometricPressure;
+                var height = msg.height;
+                updateChart(height);
+
                 var dist = document.getElementById('dist');
                 dist.textContent = msg.distance;
                 var temp = document.getElementById('temp');
                 temp.textContent = msg.temp;
                 var strength = document.getElementById('strenght')
                 strength.textContent = msg.strength;
+
                 var aclX = document.getElementById('aclX');
                 aclX.textContent = msg.aclX;
                 var aclY = document.getElementById('aclY');
                 aclY.textContent = msg.aclY;
                 var aclZ = document.getElementById('aclZ');
                 aclZ.textContent = msg.aclZ;
+
                 var gyrX = document.getElementById('gyrX');
                 gyrX.textContent = msg.gyrX;
                 var gyrY = document.getElementById('gyrY');
                 gyrY.textContent = msg.gyrY;
                 var gyrZ = document.getElementById('gyrZ');
                 gyrZ.textContent = msg.gyrZ;
+
+                var posx = msg.positionX;
+                var posy = msg.positionY;
+                updateBreadcrumbChart(posx, posy);
+
                 var timer = document.getElementById('flightTime');
                 timer.textContent = msg.flightTime;
 
-                updateChart(msg.barometricPressure);
-                
-
             });    
 
+            console.log("we got here");
             var takePictureButton = document.getElementById('takePictureButton');
             var cameraImage = document.getElementById('cameraImage');
             var motorDownButton = document.getElementById('motorDown');
@@ -216,7 +234,13 @@
             var motorStopButton = document.getElementById('motorStop');
             var pingTime = document.getElementById('ping');
             var resetTimer = document.getElementById('resetTimer');
+            var resetBreadcrumb = document.getElementById('ClearBreadcrumb');
     
+            console.log("i got to here");
+            resetBreadcrumb.addEventListener('click', function(){
+                console.error("I GOT CLICKED");
+                ClearBreadcrumbChart();
+            });
 
             takePictureButton.addEventListener('click', function() {
                 console.log('Requesting image from server...');
@@ -247,14 +271,13 @@
             socket.on('pong', function(){
                 pingStop = performance.now();
                 pingTime.textContent = pingStop - pingStart + " ms";
-            })
+            });
 
             socket.on('timerUpdate', function(msg){
                 var timer = document.getElementById('flightTime');
                 timer.textContent = msg.flightTime;
-            })
+            });
         });
-
 
         function ping(){
             pingStart = performance.now();
