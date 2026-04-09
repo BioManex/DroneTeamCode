@@ -15,6 +15,7 @@ from picamera2 import Picamera2 # type: ignore
 import io
 import base64
 import RPi.GPIO as GPIO # type: ignore
+import time
 
 from bmp180 import BMP180 # type: ignore
 
@@ -45,6 +46,14 @@ IN2 = 13
 
 flightTimer = 0
 seconds = 0
+
+DT=0
+vX=0
+vY=0
+vZ=0
+positionX=0
+positionY=0
+positionZ=0
 
 # Here, we create the neccesary base app. You don't need to worry about this.
 app = Flask(__name__)
@@ -81,10 +90,17 @@ def background_thread():
         print(accel_data['x'])
         print(accel_data['y'])
         print(accel_data['z'])
+        vX=vX+accel_data['x']*DT
+        vY=vY+accel_data['y']*DT
+        vZ=vZ+accel_data['z']*DT
+        positionX=positionX+vX
+        positionY=positionY+vY
+        positionZ=positionZ+vZ
         gyro_data = mpu.get_gyro_data()
         print(gyro_data['x'])
         print(gyro_data['y'])
         print(gyro_data['z'])
+
 
         #Lidar test
         distance, strength, temperature = tfluna.read() 
@@ -107,7 +123,10 @@ def background_thread():
                 'gyrX': gyro_data['x'],
                 'gyrY': gyro_data['y'],
                 'gyrZ': gyro_data['z'],
-                'flightTime': math.floor(flightTimer / 60) + ":" + seconds
+                'flightTime': math.floor(flightTimer / 60) + ":" + seconds,
+                'positionX':positionX,
+                'positionY':positionY,
+                'positionZ':positionZ,
             }
         )
         
@@ -116,6 +135,11 @@ def do_a_thing(msg):
     # 'msg' will contain the data sent from the client, like how we had it before.
     # Let's print what we just received to the console!
     print(msg['hello'])
+
+def getDeltaTime():
+    DT=time.time_ns()-ms
+    ms=time.time_ns()
+
 
 # This function runs when someone connects to the server - and all we do is start the background thread to update the data.
 @socketio.on('connect')
@@ -164,6 +188,9 @@ def resetTimer():
 def main():
     # These specific arguments are required to make sure the webserver is hosted in a consistent spot, so don't change them unless you know what you're doing.
     socketio.run(app, host='0.0.0.0', port=80, allow_unsafe_werkzeug=True)
+    while 1==1:
+        getDeltaTime()
+        getVelocity()
 
 if __name__ == '__main__':
     main()
