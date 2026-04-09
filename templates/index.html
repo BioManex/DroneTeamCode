@@ -188,8 +188,6 @@
         document.addEventListener('DOMContentLoaded', function(){
             var socket = io.connect('http://' + document.domain + ':' + location.port);
             socket.on('update_data', function(msg){
-                var randomNumberSpan = document.getElementById('randomNumber');
-                randomNumberSpan.textContent = msg.randomNumber;
 
                 var barometricPressureSpan = document.getElementById('barometricPressure');
                 barometricPressureSpan.textContent = msg.barometricPressure;
@@ -229,9 +227,9 @@
             console.log("we got here");
             var takePictureButton = document.getElementById('takePictureButton');
             var cameraImage = document.getElementById('cameraImage');
-            var motorDownButton = document.getElementById('motorDown');
-            var motorUpButton = document.getElementById('motorUp');
-            var motorStopButton = document.getElementById('motorStop');
+            var motorDownButton = document.getElementById('MotorDown');
+            var motorUpButton = document.getElementById('MotorUp');
+            var motorStopButton = document.getElementById('MotorStop');
             var pingTime = document.getElementById('ping');
             var resetTimer = document.getElementById('resetTimer');
             var resetBreadcrumb = document.getElementById('ClearBreadcrumb');
@@ -277,15 +275,17 @@
                 var timer = document.getElementById('flightTime');
                 timer.textContent = msg.flightTime;
             });
-        });
 
-        function ping(){
+            function ping(){
             pingStart = performance.now();
             socket.emit('ping');
-        }
+            }
 
-        setInterval(ping, 500);
+        setInterval(ping, 1000);
 
+        });
+
+        
         
     </script>
     </body>

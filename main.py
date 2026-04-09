@@ -1,6 +1,8 @@
 # These two modules allow us to run a web server.
 import math
 
+from engineio.payload import Payload
+
 from flask import Flask, render_template # type: ignore
 from flask_socketio import SocketIO # type: ignore
 
@@ -22,6 +24,8 @@ from bmp180 import BMP180 # type: ignore
 from mpu6050 import mpu6050 # type: ignore
 
 from tfluna import TFLuna # type: ignore
+
+Payload.max_decode_packets = 50
 
 # Camera setup
 picam2 = Picamera2()
@@ -50,12 +54,12 @@ seconds = 0
 DT=0
 timeSinceLastUpdate=0
 
-vX=0
-vY=0
-vZ=0
-positionX=0
-positionY=0
-positionZ=0
+vX = 0
+vY = 0
+vZ = 0
+positionX = 0
+positionY = 0
+positionZ = 0
 
 # Here, we create the neccesary base app. You don't need to worry about this.
 app = Flask(__name__)
@@ -66,9 +70,6 @@ socketio = SocketIO(app)
 def index():
     return render_template('index.html')
 
-app = Flask(__name__)
-socketio = SocketIO(app)
-
 ground_pressure = bmp.get_pressure()
 
 # This function runs in the background to transmit data to connected clients.
@@ -76,6 +77,14 @@ def background_thread():
     while True:
         # We sleep here for a single second, but this can be increased or decreased depending on how quickly you want data to be pushed to clients.
         socketio.sleep(1)
+
+        global flightTimer
+        flightTimer = flightTimer + 1
+        if(flightTimer%60<10):
+            seconds = "0" + str(flightTimer%60)
+        else:
+            seconds = str(flightTimer%60)
+        output = str(math.floor(flightTimer/60)) + ":" + seconds
 
         flightTimer = flightTimer + 1
         if(flightTimer%60<10):
@@ -116,7 +125,7 @@ def background_thread():
                 'randomNumber': random.randint(1, 100),
                 'barometricPressure': barometricPressure,
                 'height': height,
-                'dist': round(distance * 100.0, 2),
+                'distance': f"{round(distance * 100.0, 2)} cm",
                 'strength': strength,
                 'temp': temperature,
                 'aclX': accel_data['x'],
@@ -129,6 +138,7 @@ def background_thread():
                 'positionX':positionX,
                 'positionY':positionY,
                 'positionZ':positionZ,
+                'flightTime':output
             }
         )
         
@@ -187,24 +197,12 @@ def resetTimer():
     flightTimer = 0
     socketio.emit('timerUpdate', "0:00")
 
-def updateFlightTime():
-    flightTimer = flightTimer + 1
-    if(flightTimer%60<10):
-        seconds = "0" + flightTimer%60
-    else:
-        seconds = flightTimer%60
-    output = math.floor(flightTimer%60) + ":" + seconds
-    socketio.emit('timerUpdate', output)
-
 # This function is called
 def main():
     # These specific arguments are required to make sure the webserver is hosted in a consistent spot, so don't change them unless you know what you're doing.
     socketio.run(app, host='0.0.0.0', port=80, allow_unsafe_werkzeug=True)
     while True:
         getDeltaTime()
-        if(timeSinceLastUpdate > 1):
-            updateFlightTime()
-            timeSinceLastUpdate = timeSinceLastUpdate - 1
         
         
         
