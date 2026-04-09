@@ -1,4 +1,6 @@
 # These two modules allow us to run a web server.
+import math
+
 from flask import Flask, render_template # type: ignore
 from flask_socketio import SocketIO # type: ignore
 
@@ -41,6 +43,9 @@ bmp = BMP180()
 IN1 = 12
 IN2 = 13
 
+flightTimer = 0
+seconds = 0
+
 # Here, we create the neccesary base app. You don't need to worry about this.
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -60,6 +65,12 @@ def background_thread():
     while True:
         # We sleep here for a single second, but this can be increased or decreased depending on how quickly you want data to be pushed to clients.
         socketio.sleep(1)
+
+        flightTimer = flightTimer + 1
+        if(flightTimer%60<10):
+            seconds = "0" + flightTimer%60
+        else:
+            seconds = flightTimer%60
         
         #Pressure test
         barometricPressure = bmp.get_pressure()
@@ -96,7 +107,7 @@ def background_thread():
                 'gyrX': gyro_data['x'],
                 'gyrY': gyro_data['y'],
                 'gyrZ': gyro_data['z'],
-                
+                'flightTime': math.floor(flightTimer / 60) + ":" + seconds
             }
         )
         
@@ -144,7 +155,9 @@ def motor_stop():
 def pong():
     socketio.emit('pong')
 
-
+@socketio.on('resetTimer')
+def resetTimer():
+    flightTimer = 0
 
 # This function is called
 def main():
