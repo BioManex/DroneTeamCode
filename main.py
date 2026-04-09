@@ -158,6 +158,7 @@ def pong():
 @socketio.on('resetTimer')
 def resetTimer():
     flightTimer = 0
+    socketio.emit('timerUpdate', "0:00")
 
 # This function is called
 def main():

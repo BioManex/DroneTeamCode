@@ -199,6 +199,11 @@
                 pingStop = performance.now();
                 pingTime.textContent = pingStop - pingStart + " ms";
             })
+
+            socket.on('timerUpdate', function(msg){
+                var timer = document.getElementById('flightTime');
+                timer.textContent = msg.flightTime;
+            })
         });
 
 
