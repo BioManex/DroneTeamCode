@@ -48,6 +48,8 @@ flightTimer = 0
 seconds = 0
 
 DT=0
+timeSinceLastUpdate=0
+
 vX=0
 vY=0
 vZ=0
@@ -93,9 +95,9 @@ def background_thread():
         vX=vX+accel_data['x']*DT
         vY=vY+accel_data['y']*DT
         vZ=vZ+accel_data['z']*DT
-        positionX=positionX+vX
-        positionY=positionY+vY
-        positionZ=positionZ+vZ
+        positionX=positionX+vX*DT
+        positionY=positionY+vY*DT
+        positionZ=positionZ+vZ*DT
         gyro_data = mpu.get_gyro_data()
         print(gyro_data['x'])
         print(gyro_data['y'])
@@ -137,8 +139,9 @@ def do_a_thing(msg):
     print(msg['hello'])
 
 def getDeltaTime():
-    DT=time.time_ns()-ms
-    ms=time.time_ns()
+    DT=time.time()-ms
+    ms=time.time()
+    timeSinceLastUpdate = timeSinceLastUpdate + DT
 
 
 # This function runs when someone connects to the server - and all we do is start the background thread to update the data.
@@ -184,14 +187,27 @@ def resetTimer():
     flightTimer = 0
     socketio.emit('timerUpdate', "0:00")
 
+def updateFlightTime():
+    flightTimer = flightTimer + 1
+    if(flightTimer%60<10):
+        seconds = "0" + flightTimer%60
+    else:
+        seconds = flightTimer%60
+    output = math.floor(flightTimer%60) + ":" + seconds
+    socketio.emit('timerUpdate', output)
+
 # This function is called
 def main():
     # These specific arguments are required to make sure the webserver is hosted in a consistent spot, so don't change them unless you know what you're doing.
     socketio.run(app, host='0.0.0.0', port=80, allow_unsafe_werkzeug=True)
-    while 1==1:
+    while True:
         getDeltaTime()
-        getVelocity()
-
+        if(timeSinceLastUpdate > 1):
+            updateFlightTime()
+            timeSinceLastUpdate = timeSinceLastUpdate - 1
+        
+        
+        
 if __name__ == '__main__':
     main()
 
