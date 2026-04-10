@@ -43,15 +43,20 @@ tfluna.set_samp_rate(5)
 
 # Pressure sensor setup
 bmp = BMP180()
+ground_pressure = bmp.get_pressure()
 
 # Motor setup
 IN1 = 12
 IN2 = 13
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(IN1, GPIO.OUT)
+GPIO.setup(IN2, GPIO.OUT)
 
 flightTimer = 0
 seconds = 0
 
 DT=0
+ms=0
 timeSinceLastUpdate=0
 
 vX = 0
@@ -69,8 +74,6 @@ socketio = SocketIO(app)
 @app.route('/')
 def index():
     return render_template('index.html')
-
-ground_pressure = bmp.get_pressure()
 
 # This function runs in the background to transmit data to connected clients.
 def background_thread():
@@ -98,26 +101,11 @@ def background_thread():
 
         #Accelerometer test
         accel_data = mpu.get_accel_data()
-        print(accel_data['x'])
-        print(accel_data['y'])
-        print(accel_data['z'])
-        vX=vX+accel_data['x']*DT
-        vY=vY+accel_data['y']*DT
-        vZ=vZ+accel_data['z']*DT
-        positionX=positionX+vX*DT
-        positionY=positionY+vY*DT
-        positionZ=positionZ+vZ*DT
         gyro_data = mpu.get_gyro_data()
-        print(gyro_data['x'])
-        print(gyro_data['y'])
-        print(gyro_data['z'])
 
 
         #Lidar test
         distance, strength, temperature = tfluna.read() 
-        print(f"Distance: {round(distance * 100.0, 2)} cm")
-        print(f"Strength: {strength}")
-        print(f"Temperature: {temperature} C")
     
         socketio.emit(
             'update_data',
@@ -149,9 +137,24 @@ def do_a_thing(msg):
     print(msg['hello'])
 
 def getDeltaTime():
-    DT=time.time()-ms
-    ms=time.time()
-    timeSinceLastUpdate = timeSinceLastUpdate + DT
+    while True:
+        global DT
+        global ms
+        global vX
+        global vY 
+        global vZ
+        global positionX
+        global positionY
+        global positionZ
+        DT=time.time()-ms
+        ms=time.time()
+        accel_data = mpu.get_accel_data()
+        vX=vX+accel_data['x']*DT
+        vY=vY+accel_data['y']*DT
+        vZ=vZ+accel_data['z']*DT
+        positionX=positionX+vX*DT
+        positionY=positionY+vY*DT
+        positionZ=positionZ+vZ*DT
 
 
 # This function runs when someone connects to the server - and all we do is start the background thread to update the data.
@@ -159,6 +162,7 @@ def getDeltaTime():
 def handle_connect():
     print('Client connected')
     socketio.start_background_task(target=background_thread)
+    socketio.start_background_task(target=getDeltaTime)
     
 @socketio.on('request_image')
 def handle_image_request():
@@ -194,21 +198,20 @@ def pong():
 
 @socketio.on('resetTimer')
 def resetTimer():
+    global flightTimer
     flightTimer = 0
-    socketio.emit('timerUpdate', "0:00")
+    socketio.emit('timerUpdate', {
+        'flightTime': "0:00"
+    })
 
 # This function is called
 def main():
     # These specific arguments are required to make sure the webserver is hosted in a consistent spot, so don't change them unless you know what you're doing.
     socketio.run(app, host='0.0.0.0', port=80, allow_unsafe_werkzeug=True)
-    while True:
-        getDeltaTime()
+
         
         
         
 if __name__ == '__main__':
     main()
-
-
-
 

@@ -109,14 +109,6 @@
                 data: [{
                     x: 0,
                     y: 0
-                },
-                {
-                    x: 3,
-                    y: -2
-                },
-                {
-                   x: 2,
-                   y: 10 
                 }],
                 backgroundColor: 'rgb(255, 99, 132)'
             }],
@@ -178,6 +170,7 @@
         function updateBreadcrumbChart(xpos, ypos){
             breadData.datasets[0].data.push({x: xpos, y: ypos});
             breadcrumb.update();
+            console.log(breadData.datasets[0].data);
         }
 
         function ClearBreadcrumbChart(){
