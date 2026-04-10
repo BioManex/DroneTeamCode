@@ -82,12 +82,14 @@
     <button id="MotorUp" style="width: 400px; height: 50px; position: absolute; bottom: 80px; left: 550px;">Motor Up</button>
     <button id="MotorDown" style="width: 400px; height: 50px; position: absolute; bottom: 25px; left: 550px;">Motor Down</button>
     <button id="MotorStop" style="width: 95px; height: 105px; position: absolute; bottom: 25px; left: 450px;">Motor Stop</button>
-    <button id="ClearBreadcrumb" style="width: 120px; height: 40px; position: absolute; left: 190px; top: 620px;">Reset Breadcrumb Trail</button>
+    <button id="ClearBreadcrumb" style="width: 120px; height: 40px; position: absolute; left: 185px; top: 620px;">Reset Breadcrumb Trail</button>
+    <button id="TakeLidarSamp" style="width: 120px; height: 40px; position: absolute; left: 308px; top: 620px;">Take Lidar Sample</button>
     <p style="position: absolute; top: 20px; left: 450px;">Ping: <span id="ping">Loading...</span></p>
     <script>
         
         const elevationChart = document.getElementById('elevation');
         const breadcrumbChart = document.getElementById('breadcrumb');
+        const lidarChart = document.getElementById('Lidar');
         var barometricPressureSpan = document.getElementById('barometricPressure');
         var elevationPos = 0;
         var pingStart = 0;
@@ -110,6 +112,14 @@
                     x: 0,
                     y: 0
                 }],
+                backgroundColor: 'rgb(255, 99, 132)'
+            }],
+        };
+
+        var lidarData = {
+            datasets: [{
+                label: 'Positions',
+                data: [],
                 backgroundColor: 'rgb(255, 99, 132)'
             }],
         };
@@ -144,6 +154,34 @@
                         position: 'center',
                         min: -20,
                         max: 20
+                    }
+                },
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                animation: false
+            }
+        });
+
+        var lidar = new Chart(lidarChart, {
+            type: 'scatter',
+            data: lidarData,
+            options: {
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'center',
+                        min: -40,
+                        max: 40
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'center',
+                        min: -40,
+                        max: 40
                     }
                 },
                 maintainAspectRatio: false,
@@ -226,10 +264,9 @@
             var pingTime = document.getElementById('ping');
             var resetTimer = document.getElementById('resetTimer');
             var resetBreadcrumb = document.getElementById('ClearBreadcrumb');
+            var takeLidarSamp = document.getElementById('takeLidarSamp');
     
-            console.log("i got to here");
             resetBreadcrumb.addEventListener('click', function(){
-                console.error("I GOT CLICKED");
                 ClearBreadcrumbChart();
             });
 
@@ -253,7 +290,11 @@
             resetTimer.addEventListener('click', function(){
                 socket.emit('resetTimer');
             });
-               
+
+            takeLidarSamp.addEventListener('click', function(){
+                socket.emit('takeLidarReading');
+            });
+
             socket.on('new_image', function(msg) {
                 console.log('Received new image');
                 cameraImage.src = 'data:image/jpeg;base64,' + msg.image_data;
@@ -268,6 +309,19 @@
                 var timer = document.getElementById('flightTime');
                 timer.textContent = msg.flightTime;
             });
+
+            socket.on('LidarData', function(msg){
+                var data = msg.data;
+                var newCoords = [];
+                for(p = 0; p < data.length; p++){
+                    var dist = data[p].dist;
+                    var angle = data[p].angle;
+                    newCoords.push({x: dist * Math.cos(angle), y: dist * Math.sin(angle)});
+                }
+                lidarData.datasets[0].data = newCoords;
+
+            });
+
 
             function ping(){
             pingStart = performance.now();

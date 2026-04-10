@@ -1,7 +1,7 @@
 # These two modules allow us to run a web server.
 import math
 
-from engineio.payload import Payload
+from engineio.payload import Payload # type: ignore
 
 from flask import Flask, render_template # type: ignore
 from flask_socketio import SocketIO # type: ignore
@@ -40,6 +40,7 @@ mpu = mpu6050(0x68)
 tfluna = TFLuna() 
 tfluna.open() 
 tfluna.set_samp_rate(5)
+takingSample = False
 
 # Pressure sensor setup
 bmp = BMP180()
@@ -66,6 +67,8 @@ positionX = 0
 positionY = 0
 positionZ = 0
 
+angleZ = 0
+
 # Here, we create the neccesary base app. You don't need to worry about this.
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -88,12 +91,6 @@ def background_thread():
         else:
             seconds = str(flightTimer%60)
         output = str(math.floor(flightTimer/60)) + ":" + seconds
-
-        flightTimer = flightTimer + 1
-        if(flightTimer%60<10):
-            seconds = "0" + flightTimer%60
-        else:
-            seconds = flightTimer%60
         
         #Pressure test
         barometricPressure = bmp.get_pressure()
@@ -105,8 +102,11 @@ def background_thread():
 
 
         #Lidar test
-        distance, strength, temperature = tfluna.read() 
-    
+        if(takingSample):
+            distance, strength, temperature = tfluna.read() 
+        else:
+            distance, strength, temperature = "Taking Test"
+
         socketio.emit(
             'update_data',
             {
@@ -122,7 +122,6 @@ def background_thread():
                 'gyrX': gyro_data['x'],
                 'gyrY': gyro_data['y'],
                 'gyrZ': gyro_data['z'],
-                'flightTime': math.floor(flightTimer / 60) + ":" + seconds,
                 'positionX':positionX,
                 'positionY':positionY,
                 'positionZ':positionZ,
@@ -146,15 +145,18 @@ def getDeltaTime():
         global positionX
         global positionY
         global positionZ
+        global angleZ
         DT=time.time()-ms
         ms=time.time()
         accel_data = mpu.get_accel_data()
+        gyro_data = mpu.get_gyro_data()
         vX=vX+accel_data['x']*DT
         vY=vY+accel_data['y']*DT
         vZ=vZ+accel_data['z']*DT
         positionX=positionX+vX*DT
         positionY=positionY+vY*DT
         positionZ=positionZ+vZ*DT
+        angleZ = gyro_data['z'] * DT
 
 
 # This function runs when someone connects to the server - and all we do is start the background thread to update the data.
@@ -203,6 +205,23 @@ def resetTimer():
     socketio.emit('timerUpdate', {
         'flightTime': "0:00"
     })
+
+@socketio.on('takeLidarReading')
+def takeSample():
+    global takingSample
+    takingSample = True
+    totalAngle = 0
+    data = []
+    sleep(0.2)
+    while(totalAngle < 360 or totalAngle > -360):
+        distance, strength, temperature = tfluna.read() 
+        data.append({'dist': round(distance * 100.0, 4), 'angle': totalAngle})
+        totalAngle = totalAngle + angleZ
+        sleep(0.2)
+    socketio.emit('LidarData', {
+        'data': data
+    })
+
 
 # This function is called
 def main():
