@@ -1,3 +1,3 @@
 # Aerospace Jam Template
 
-Write your README here!
+This hurt way to much. Next year I am totaly cloning this repo and just adding on, and you can't stop me...
